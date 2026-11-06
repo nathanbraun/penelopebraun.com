@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Disney Trivia Challenge</title>
+<style>
+  :root {
+    --bg1: #1b1464;
+    --bg2: #6a1b9a;
+    --gold: #ffd54f;
+    --card: #ffffff;
+    --ink: #22223b;
+    --muted: #6c6c80;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Avenir Next", "Avenir", system-ui, -apple-system, sans-serif;
+    color: var(--ink);
+    background: radial-gradient(ellipse at top, var(--bg2), var(--bg1) 70%) fixed;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: max(20px, env(safe-area-inset-top)) 20px 40px;
+    overflow-x: hidden;
+  }
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star { position: absolute; color: #fff; opacity: .7; animation: twinkle 3s infinite ease-in-out; }
+  @keyframes twinkle { 0%,100% { opacity: .2 } 50% { opacity: .9 } }
+  main { position: relative; z-index: 1; width: 100%; max-width: 760px; }
+
+  header { text-align: center; color: #fff; margin: 10px 0 28px; }
+  header h1 {
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    margin: 0;
+    color: var(--gold);
+    text-shadow: 0 3px 0 rgba(0,0,0,.25);
+    letter-spacing: .5px;
+  }
+  header p { font-size: 1.25rem; margin: 8px 0 0; opacity: .9; }
+
+  .parks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .park {
+    border: 0; border-radius: 22px; padding: 26px 20px; font: inherit;
+    font-size: 1.35rem; font-weight: 700; color: #fff; cursor: pointer;
+    box-shadow: 0 6px 0 rgba(0,0,0,.25); transition: transform .1s;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .park:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+  .park .emoji { font-size: 2.6rem; }
+  .park .count { font-size: .95rem; font-weight: 500; opacity: .9; }
+  .park .done { font-size: .85rem; font-weight: 600; background: rgba(255,255,255,.25); padding: 2px 10px; border-radius: 99px; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; color: #fff; margin-bottom: 14px; gap: 10px; }
+  .topbar .title { font-size: 1.3rem; font-weight: 700; color: var(--gold); text-align: center; flex: 1; }
+  .btn-ghost {
+    background: rgba(255,255,255,.15); color: #fff; border: 0; border-radius: 14px;
+    padding: 12px 16px; font: inherit; font-size: 1rem; font-weight: 600; cursor: pointer;
+  }
+  .progress { height: 10px; background: rgba(255,255,255,.2); border-radius: 99px; overflow: hidden; margin-bottom: 18px; }
+  .progress > div { height: 100%; background: var(--gold); border-radius: 99px; transition: width .3s; }
+
+  .card {
+    background: var(--card); border-radius: 28px; padding: 32px 28px 28px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.35); min-height: 360px;
+    display: flex; flex-direction: column;
+  }
+  .qnum { color: var(--muted); font-weight: 700; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+  .question { font-size: clamp(1.5rem, 4.2vw, 2.1rem); font-weight: 700; line-height: 1.3; margin: 12px 0 24px; }
+  .answer-area { margin-top: auto; }
+  .reveal {
+    width: 100%; border: 0; border-radius: 18px; padding: 22px; font: inherit;
+    font-size: 1.4rem; font-weight: 800; color: var(--ink); background: var(--gold);
+    box-shadow: 0 6px 0 #c9a227; cursor: pointer;
+  }
+  .reveal:active { transform: translateY(4px); box-shadow: 0 2px 0 #c9a227; }
+  .answer {
+    border-radius: 18px; padding: 20px 22px; background: #f3e8ff; border: 3px dashed #9c4dcc;
+    font-size: clamp(1.3rem, 3.6vw, 1.7rem); font-weight: 600; line-height: 1.35;
+    animation: pop .35s ease-out;
+  }
+  .answer .label { display: block; font-size: .9rem; color: #7b1fa2; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  @keyframes pop { 0% { transform: scale(.9); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+
+  .nav { display: flex; gap: 14px; margin-top: 18px; }
+  .nav button {
+    flex: 1; border: 0; border-radius: 18px; padding: 20px; font: inherit; font-size: 1.25rem;
+    font-weight: 700; cursor: pointer; background: rgba(255,255,255,.95); color: var(--ink);
+    box-shadow: 0 5px 0 rgba(0,0,0,.25);
+  }
+  .nav button:disabled { opacity: .35; cursor: default; }
+  .nav button.primary { background: #4caf50; color: #fff; }
+
+  .finish { text-align: center; }
+  .finish .big { font-size: 4rem; }
+  .finish h2 { font-size: 2rem; margin: 8px 0; }
+  .finish p { font-size: 1.2rem; color: var(--muted); }
+
+  .confetti { position: fixed; top: -20px; font-size: 1.6rem; z-index: 5; pointer-events: none; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  .surprise { width: 100%; margin-top: 16px; }
+  header .total { font-size: 1.1rem; margin-top: 12px; color: var(--gold); }
+  .topbar .score { min-width: 96px; text-align: right; font-size: 1.3rem; font-weight: 800; color: #a5d6a7; }
+  .mark { display: flex; gap: 14px; margin-top: 16px; }
+  .mark button {
+    flex: 1; border: 0; border-radius: 18px; padding: 22px 10px; font: inherit;
+    font-size: 1.35rem; font-weight: 800; color: #fff; cursor: pointer;
+  }
+  .mark .got { background: #43a047; box-shadow: 0 6px 0 #2e7d32; }
+  .mark .missed { background: #e57373; box-shadow: 0 6px 0 #c62828; }
+  .mark button:active { transform: translateY(4px); box-shadow: none; }
+  .final-score { font-size: 4.5rem; font-weight: 900; color: #7b1fa2; line-height: 1; margin-top: 10px; }
+  .final-score span { font-size: 2rem; color: var(--muted); }
+  .final-stars { font-size: 2.6rem; margin: 10px 0 4px; letter-spacing: 6px; }
+  .trophy { margin-top: 16px; padding: 16px; border-radius: 18px; background: #fff8e1; font-size: 1.25rem; }
+  footer { text-align: center; margin-top: 30px; }
+  footer button { background: none; border: 0; color: rgba(255,255,255,.6); font: inherit; font-size: .9rem; text-decoration: underline; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<main id="app"></main>
+
+<script src="questions.js"></script>
+<script>
+
+// --- state (saved so a refresh / closed tab doesn't lose her place) ---
+// rounds[id] = { idx, marks: [true|false|undefined per question], deck? (surprise only) }
+// best[id]   = { score, total }  — best finished score per park, drives the stars
+const KEY = "disney-trivia-v2";
+const fresh = () => ({ cur: null, revealed: false, rounds: {}, best: {} });
+let state = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || "null") || {});
+const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+
+const SURPRISE = { id: "surprise", name: "Surprise Round", emoji: "🎲", color: "#8e24aa", size: 10 };
+
+const app = document.getElementById("app");
+const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function newSurpriseDeck() {
+  const all = PARKS.flatMap(p => p.questions.map((_, i) => [p.id, i]));
+  return shuffle(all).slice(0, SURPRISE.size);
+}
+
+// A "round" is a park, or the surprise mix. deck = list of [parkId, questionIndex].
+function getRound(id) {
+  const meta = id === SURPRISE.id ? SURPRISE : PARKS.find(p => p.id === id);
+  if (!meta) return null;
+  const r = state.rounds[id] ||= { idx: 0, marks: [] };
+  if (id === SURPRISE.id && !r.deck) r.deck = newSurpriseDeck();
+  const deck = id === SURPRISE.id ? r.deck : meta.questions.map((_, i) => [id, i]);
+  return { meta, r, deck };
+}
+function restart(id) {
+  state.rounds[id] = { idx: 0, marks: [] };
+  state.revealed = false;
+}
+const scoreOf = r => r.marks.filter(m => m === true).length;
+const starsFor = (score, total) => { const f = score / total; return f >= .9 ? 3 : f >= .6 ? 2 : f >= .3 ? 1 : 0; };
+const starStr = n => "⭐".repeat(n) + "☆".repeat(3 - n);
+
+function render() {
+  save();
+  const round = state.cur && getRound(state.cur);
+  if (!round) return renderHome();
+  if (round.r.idx >= round.deck.length) return renderFinish(round);
+  renderQuestion(round);
+}
+
+function start(id) {
+  const round = getRound(id);
+  if (round.r.idx >= round.deck.length) {           // finished last time → fresh go
+    restart(id);
+    if (id === SURPRISE.id) state.rounds[id].deck = newSurpriseDeck();
+  }
+  state.cur = id;
+  state.revealed = false;
+  render();
+}
+
+function renderHome() {
+  const badge = p => {
+    const b = state.best[p.id], r = state.rounds[p.id];
+    if (r && r.idx > 0 && r.idx < p.questions.length) return `<span class="done">Question ${r.idx + 1}</span>`;
+    if (b) return `<span class="done">${starStr(starsFor(b.score, b.total))} ${b.score}/${b.total}</span>`;
+    return "";
+  };
+  const totalBest = PARKS.reduce((t, p) => t + (state.best[p.id]?.score || 0), 0);
+  const totalQs = PARKS.reduce((t, p) => t + p.questions.length, 0);
+  const anyBest = PARKS.some(p => state.best[p.id]);
+  app.innerHTML = `
+    <header>
+      <h1>Disney Trivia Challenge</h1>
+      <p>🎂 Happy 10th Birthday, Kinsley! 🎉<br>How well do you know Disney?</p>
+      ${anyBest ? `<p class="total">Total score: <b>${totalBest}</b> / ${totalQs}</p>` : ""}
+    </header>
+    <div class="parks">
+      ${PARKS.map(p => `
+        <button class="park" style="background:${p.color}" data-round="${p.id}">
+          <span class="emoji">${p.emoji}</span>
+          ${esc(p.name)}
+          <span class="count">${p.questions.length} questions</span>
+          ${badge(p)}
+        </button>`).join("")}
+    </div>
+    <button class="park surprise" style="background:${SURPRISE.color}" data-round="${SURPRISE.id}">
+      <span class="emoji">${SURPRISE.emoji}</span>
+      Surprise me!
+      <span class="count">${SURPRISE.size} random questions from every park</span>
+    </button>
+    <footer><button id="reset">Start everything over</button></footer>`;
+  app.querySelectorAll("[data-round]").forEach(b => b.onclick = () => start(b.dataset.round));
+  document.getElementById("reset").onclick = () => { state = fresh(); render(); };
+}
+
+function renderQuestion({ meta, r, deck }) {
+  const i = r.idx, n = deck.length;
+  const [pid, qi] = deck[i];
+  const qPark = PARKS.find(p => p.id === pid);
+  const [q, a] = qPark.questions[qi];
+  const isSurprise = meta.id === SURPRISE.id;
+  app.innerHTML = `
+    <div class="topbar">
+      <button class="btn-ghost" id="home">🏠 Home</button>
+      <div class="title">${meta.emoji} ${esc(meta.name)}</div>
+      <div class="score">✓ ${scoreOf(r)}</div>
+    </div>
+    <div class="progress"><div style="width:${(i / n) * 100}%"></div></div>
+    <div class="card">
+      <div class="qnum">Question ${i + 1} of ${n}${isSurprise ? ` · ${qPark.emoji} ${esc(qPark.name)}` : ""}</div>
+      <div class="question">${esc(q)}</div>
+      <div class="answer-area">
+        ${state.revealed
+          ? `<div class="answer"><span class="label">Answer</span>${esc(a)}</div>
+             <div class="mark">
+               <button class="got" id="got">✓ Got it!</button>
+               <button class="missed" id="missed">✗ Missed it</button>
+             </div>`
+          : `<button class="reveal" id="reveal">✨ Show answer ✨</button>`}
+      </div>
+    </div>
+    <div class="nav">
+      <button id="prev" ${i === 0 ? "disabled" : ""}>← Back</button>
+      <button id="skip">Skip →</button>
+    </div>`;
+  const go = to => { r.idx = to; state.revealed = false; render(); };
+  const mark = v => { r.marks[i] = v; go(i + 1); };
+  document.getElementById("home").onclick = () => { state.cur = null; render(); };
+  document.getElementById("prev").onclick = () => go(i - 1);
+  document.getElementById("skip").onclick = () => go(i + 1);
+  const el = id => document.getElementById(id);
+  if (el("reveal")) el("reveal").onclick = () => { state.revealed = true; render(); };
+  if (el("got")) el("got").onclick = () => mark(true);
+  if (el("missed")) el("missed").onclick = () => mark(false);
+}
+
+function renderFinish({ meta, r, deck }) {
+  const score = scoreOf(r), total = deck.length;
+  const stars = starsFor(score, total);
+  const isSurprise = meta.id === SURPRISE.id;
+  if (!isSurprise) {
+    const prev = state.best[meta.id];
+    if (!prev || score > prev.score) state.best[meta.id] = { score, total };
+    save();
+  }
+  const allDone = !isSurprise && PARKS.every(p => state.best[p.id]);
+  const totalBest = PARKS.reduce((t, p) => t + (state.best[p.id]?.score || 0), 0);
+  const totalQs = PARKS.reduce((t, p) => t + p.questions.length, 0);
+  const cheer = ["Nice try! Play again to earn a star!", "Good job!", "Awesome!", "WOW — Disney expert!"][stars];
+  app.innerHTML = `
+    <div class="card finish">
+      <div class="big">${meta.emoji}</div>
+      <h2>${isSurprise ? "Surprise round done!" : `You finished ${esc(meta.name)}!`}</h2>
+      <div class="final-score">${score} <span>/ ${total}</span></div>
+      <div class="final-stars">${starStr(stars)}</div>
+      <p>${cheer}</p>
+      ${allDone ? `<div class="trophy">🏆 You did ALL the parks! Total: <b>${totalBest} / ${totalQs}</b><br>Happy birthday, Kinsley! 🎂</div>` : ""}
+    </div>
+    <div class="nav">
+      <button id="again">${isSurprise ? "🎲 New surprise round" : "↺ Play again"}</button>
+      <button id="home" class="primary">🏠 Home</button>
+    </div>`;
+  confetti();
+  document.getElementById("home").onclick = () => { state.cur = null; render(); };
+  document.getElementById("again").onclick = () => start(meta.id);
+}
+
+function confetti() {
+  const bits = ["🎉", "✨", "🎈", "⭐", "🎂", "🏰"];
+  for (let k = 0; k < 40; k++) {
+    const el = document.createElement("div");
+    el.className = "confetti";
+    el.textContent = bits[k % bits.length];
+    el.style.left = Math.random() * 100 + "vw";
+    el.style.animationDuration = 2 + Math.random() * 2.5 + "s";
+    el.style.animationDelay = Math.random() * .8 + "s";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+}
+
+// twinkly background
+const stars = document.getElementById("stars");
+for (let k = 0; k < 40; k++) {
+  const s = document.createElement("div");
+  s.className = "star";
+  s.textContent = "✦";
+  s.style.left = Math.random() * 100 + "%";
+  s.style.top = Math.random() * 100 + "%";
+  s.style.fontSize = 6 + Math.random() * 12 + "px";
+  s.style.animationDelay = Math.random() * 3 + "s";
+  document.body.querySelector(".stars").appendChild(s);
+}
+
+render();
+</script>
+</body>
+</html>
